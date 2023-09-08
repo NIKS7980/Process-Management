@@ -1,0 +1,99 @@
+import os
+import sys
+import subprocess
+
+def list_processes():
+    print("List of currently running processes:")
+    os.system("ps aux")
+
+def view_process_details(process_id):
+    try:
+        process_id = int(process_id)
+    except ValueError:
+        print("Invalid process ID.")
+        return
+
+    try:
+        process_info = os.popen(f"ps -p {process_id} -o pid,ppid,%cpu,%mem,comm,").read()
+        print("Process details:")
+        print(process_info)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+def view_process_priority(process_id):
+    try:
+        process_id = int(process_id)
+    except ValueError:
+        print("Invalid process ID.")
+        return
+
+    try:
+        priority_info = os.popen(f"ps -p {process_id} -o nice").read()
+        print(f"Priority (nice value) of process {process_id}: {priority_info.strip()}")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+def terminate_process(process_id):
+    try:
+        process_id = int(process_id)
+    except ValueError:
+        print("Invalid process ID.")
+        return
+
+    try:
+        os.kill(process_id, 9)  # Terminate the process forcefully
+        print(f"Process with ID {process_id} terminated successfully.")
+    except ProcessLookupError:
+        print(f"Process with ID {process_id} not found.")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+def change_process_priority(process_id, new_priority):
+    try:
+        process_id = int(process_id)
+        new_priority = int(new_priority)
+    except ValueError:
+        print("Invalid process ID or priority.")
+        return
+
+    try:
+        subprocess.run(["renice", str(new_priority), "-p", str(process_id)], check=True)
+        print(f"Process priority for ID {process_id} changed to {new_priority}.")
+    except subprocess.CalledProcessError:
+        print("Failed to change process priority. Check permissions and process ID.")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+def main():
+    while True:
+        print("\nOptions:")
+        print("1. List processes")
+        print("2. View process details")
+        print("3. View process priority")
+        print("4. Terminate process")
+        print("5. Change process priority")
+        print("6. Exit")
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            list_processes()
+        elif choice == "2":
+            process_id = input("Enter the process ID: ")
+            view_process_details(process_id)
+        elif choice == "3":
+            process_id = input("Enter the process ID to view priority: ")
+            view_process_priority(process_id)
+        elif choice == "4":
+            process_id = input("Enter the process ID to terminate: ")
+            terminate_process(process_id)
+        elif choice == "5":
+            process_id = input("Enter the process ID to change priority: ")
+            new_priority = input("Enter the new priority (0-20): ")
+            change_process_priority(process_id, new_priority)
+        elif choice == "6":
+            sys.exit()
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
