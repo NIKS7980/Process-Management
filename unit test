@@ -1,0 +1,55 @@
+import unittest
+from unittest.mock import patch, Mock
+import io
+import os
+import sys
+import subprocess
+
+# Import the functions from your script
+from process_management import list_processes, view_process_details, view_process_priority, terminate_process, change_process_priority
+
+class TestProcessManagementFunctions(unittest.TestCase):
+
+    def setUp(self):
+        # Redirect standard output to capture printed messages
+        self.stdout = io.StringIO()
+        sys.stdout = self.stdout
+
+    def tearDown(self):
+        # Restore standard output
+        sys.stdout = sys.__stdout__
+
+    @patch('os.system')
+    def test_list_processes(self, mock_system):
+        list_processes()
+        mock_system.assert_called_once_with("ps aux")
+        self.assertEqual(self.stdout.getvalue(), "List of currently running processes:\n")
+
+    @patch('os.popen')
+    def test_view_process_details(self, mock_popen):
+        mock_popen.return_value.read.return_value = "Process Info"
+        view_process_details(12345)
+        mock_popen.assert_called_once_with("ps -p 12345 -o pid,ppid,%cpu,%mem,comm,")
+        self.assertEqual(self.stdout.getvalue(), "Process details:\nProcess Info\n")
+
+    @patch('os.popen')
+    def test_view_process_priority(self, mock_popen):
+        mock_popen.return_value.read.return_value = "19"
+        view_process_priority(12345)
+        mock_popen.assert_called_once_with("ps -p 12345 -o nice")
+        self.assertEqual(self.stdout.getvalue(), "Priority (nice value) of process 12345: 19\n")
+
+    @patch('os.kill', Mock())
+    def test_terminate_process(self):
+        with patch('sys.exit') as mock_exit:
+            terminate_process(12345)
+            mock_exit.assert_not_called()
+            self.assertEqual(self.stdout.getvalue(), "Process with ID 12345 terminated successfully.\n")
+
+    @patch('subprocess.run', Mock())
+    def test_change_process_priority(self):
+        change_process_priority(12345, 10)
+        self.assertEqual(self.stdout.getvalue(), "Process priority for ID 12345 changed to 10.\n")
+
+if __name__ == '__main__':
+    unittest.main()
